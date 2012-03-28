@@ -1,0 +1,8 @@
+* Code from my Clojure intro presentation to Asheville.rb on 3/27/2012
+
+  The source for the presentation is in =avl-rb-clojure-intro.org=, and
+  I used [[https://github.com/relevance/org-html-slideshow][org-html-slideshow]] to turn it into a presentation. You can
+  view the presentation [[http://tcrawley.org/presentations/avl-rb-clojure-intro/][here]] (press 't' to enter presentation mode, and
+  use the left and right arrow keys to navigate).
+
+  The simple java graphics demo is in =demo/=.

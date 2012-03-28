@@ -1,0 +1,236 @@
+#+OPTIONS:     H:4
+* Intro to Clojure                                                    :slide:
+#+begin_html
+<img src="clojure-logo.png" style="display: block; margin: auto;"/>
+#+end_html
+
+#+begin_html
+<div style="text-align:right; font-style: italic; font-size: 0.7em;padding-right: 4em;">
+  Toby Crawley<br/>
+  Asheville.rb<br/>
+  March 27, 2012
+</div>
+#+end_html
+
+** What is Clojure?                                                   :slide:
+  - A Lisp
+    - Homoiconic - Code as data
+    - Functional
+      - *Not* Object Oriented
+      - built around immutable data structures
+  - Runs on the JVM
+    - Embraces Java
+  - ClojureCLR, ClojureScript, clojure-py are alt. impls.
+*** 5 years old                                                       :notes:
+    - 1958
+    - s-expressions (symbolic)
+
+** Parts of Clojure                                                   :slide:
+   - very little syntax
+*** Truthiness                                                        :slide:
+    - =nil= and =false= are /false/
+    - =true= and everything else is /true/, including empty lists
+    - same as ruby
+*** Primitives - Strings                                              :slide:
+    - Just java strings
+    #+begin_src clojure
+      "I'm a string"
+    #+end_src
+**** No string interp                                                 :notes:
+*** Primitives - Characters                                           :slide:
+    - Just java characters
+    #+begin_src clojure
+      \a \b \x  
+     #+end_src
+**** but w/o single quotes                                            :notes:
+*** Primitives - Numbers                                              :slide:
+     #+begin_src clojure
+       42   ;; long
+       42N  ;; clojure.lang.BigInt
+       4.2  ;; double
+       4.2M ;; java.math.BigDecimal
+       22/7 ;; ratio
+     #+end_src
+*** Primitives - Symbols                                              :slide:
+    - names of things
+    #+begin_src clojure
+      str
+      println
+      clojure.string/split
+    #+end_src
+*** Primitives - Keywords                                             :slide:
+    - identifiers, offer fast equality
+    - often used as map keys
+    - are functions of maps
+    #+begin_src clojure
+      :foo
+      :what-is-this-thing-in-my-hair?
+      :some.namespace/bar
+
+      (:key {:key "value"}) ;; => "value"
+    #+end_src
+
+*** Collections - Lists                                               :slide:
+    - implemented as a linked list
+    - have special eval semantics 
+    #+begin_src clojure
+      (1 2 3 4)
+      
+      (str "a" "b" "c")
+    #+end_src
+**** head is fast                                                     :notes:
+*** Collections - Vectors                                             :slide:
+    - an array
+    - generally used unless list semantics or performance needed
+    - functions of index
+    #+begin_src clojure
+      [1 2 3 4]
+      
+      ([1 2 3 4] 1) ;; => 2
+    #+end_src
+**** tail is fast                                                     :notes:
+*** Collections - Maps                                                :slide:
+    - analogous to a Ruby Hash 
+    - functions of keys
+    #+begin_src clojure
+      {:a :b, :c :d}
+
+      ({:key "value"} :key) ;; => "value"
+    #+end_src
+
+*** Collections - Sets                                                :slide:
+    - functions of their members
+    #+begin_src clojure
+      #{1 2 3 4}
+
+      (#{"yes" "no"} "yes")   ;; => "yes"
+      (#{"yes" "no"} "maybe") ;; => nil
+    #+end_src
+** Immutability                                                       :slide:
+   #+begin_src clojure
+     (def x {:a :b})
+     (assoc x :c :d) ;; => {:a :b, :c :d}
+     x               ;; => {:a :b}
+     
+     (def y [1 2 3])
+     (conj y 4)      ;; => [1 2 3 4]
+     y               ;; => [1 2 3]
+   #+end_src
+*** def creates a 'var'                                               :notes:
+    - internal structure is shared
+    - makes concurrency easier
+** Lazy Sequences                                                     :slide:
+   - values in the sequence aren't realized until needed
+   - allows working with large/infinite datasets
+   #+begin_src clojure
+        (take 10 (range)) ;; => (0 1 2 3 4 5 6 7 8 9)
+   #+end_src
+*** range is infinite                                                 :notes:
+    - take itself returns a lazy sequence
+** Function Definition                                                :slide:
+   - named
+     #+begin_src clojure
+       (defn ham-is-good [a b]
+         (println (if (or (= a "ham")
+                          (= b "ham"))
+                    "Ham goes good with anything!"
+                    (str a " and " b "? Grody!"))))
+     #+end_src
+*** this is just data                                                 :notes:
+** Function Definition                                                :slide:
+   - anonymous - lambdas
+     #+begin_src clojure
+       (fn [v]
+         (println "I got" v))
+       
+       #(println "I got" %)
+     #+end_src
+*** compare to ruby blocks                                            :notes:
+** Reference Types                                                    :slide:
+   - allow for controlled mutability
+   - can only be manipulated via special functions
+   - mutation occurs within a transaction
+   - must be explicitly dereferenced
+#+begin_src clojure
+  (def an-atom (atom 0))
+  
+  (swap! an-atom inc)
+  
+  @an-atom ;; => 1
+#+end_src
+*** STM & MVCC                                                        :notes:
+    - atoms - single changing value
+    - agents - asynchronous update of a single value
+    - refs - mutliple coordinated changing values; explicit (dosync)
+** Let & Desctructuring                                               :slide:
+   - bind values in a closure
+     #+begin_src clojure
+       (let [full-name (some-name-producing-function)
+             [first-name last-name] 
+               (split full-name #" ")]
+         (println full-name "splits into" 
+                  first-name last-name))
+     #+end_src
+*** values only bound inside let                                      :notes:
+    - introduces destructuring
+    - aka structural binding
+** Let & Destructuring                                                :slide:
+   #+begin_src clojure
+     (let [point [123 456]
+           [x-coord y-coord] point]
+       (defn draw-something
+         [height width 
+          {:keys [color opacity] :as options}]
+         (draw-square x-coord y-coord height 
+                      width color opacity)
+         (something-else-that-wants-options options)))
+   #+end_src
+** REPL                                                               :slide:
+   - the Read-Eval-Print Loop
+*** think irb                                                         :notes:
+** Demo!                                                              :slide:
+
+** Pros/Cons                                                          :slide:
+   - pros:
+     - write code with less errors
+     - bend your brain
+     - access to all Java libraries
+     - safe(r) concurrency
+   - cons:
+     - have to learn Java as well
+     - young ecosystem
+
+** Who uses Clojure?                                                  :slide:
+   - Twitter
+   - Heroku
+   - Datomic
+   - World Singles
+   - Sonian
+   - Runa
+   - Me! (therefore Red Hat)
+
+
+** Resources                                                          :slide:
+   - Clojure Koans - https://github.com/functional-koans/clojure-koans
+   - 4clojure - http://www.4clojure.com/
+   - #clojure on freenode
+   - clojure@googlegroups.com
+   - books
+     - Programming Clojure - Stuart Halloway
+     - Joy of Clojure - Michael Fogus & Chris Houser
+
+#+TAGS: slide(s) notes(n)
+
+#+STYLE: <link rel="stylesheet" type="text/css" href="common.css" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="screen.css" media="screen" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="projection.css" media="projection" />
+#+STYLE: <link rel="stylesheet" type="text/css" href="presenter.css" media="presenter" />
+
+#+BEGIN_HTML
+<script type="text/javascript" src="org-html-slideshow.js"></script>
+#+END_HTML
+
+# Local Variables:
+# org-export-html-style-include-default: nil
+# org-export-html-style-include-scripts: nil
+# End:
